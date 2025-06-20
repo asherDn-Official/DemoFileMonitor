@@ -1,0 +1,81 @@
+/* src/App.css */
+
+/* Ensure the body takes full width and centers content */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f4f6f8;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  display: flex;
+  justify-content: center;
+}
+
+/* Container centers content and sets max width */
+.container {
+  max-width: 1200px;
+  width: 100%;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+/* Centered Grid */
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+/* Card styling */
+.card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  width: 320px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  text-align: left;
+  border-left: 6px solid #007bff;
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+}
+
+.card h2 {
+  font-size: 1.2rem;
+  color: #007bff;
+  margin-bottom: 1rem;
+}
+
+/* Label & Value */
+.label {
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.value {
+  font-weight: 500;
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  min-width: 80px;
+}
+
+/* Status colors */
+.green {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.red {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.orange {
+  background-color: #fff3e0;
+  color: #ef6c00;
+}

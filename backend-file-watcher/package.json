@@ -1,0 +1,14 @@
+{
+  "name": "backend-file-processor",
+  "version": "1.0.0",
+  "main": "processor.js",
+  "scripts": {
+    "start": "node processor.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "mongoose": "^6.0.12",
+    "xlsx": "^0.18.5",
+    "node-cron": "^3.0.2"
+  }
+}
