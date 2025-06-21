@@ -124,7 +124,7 @@ const api = axios.create({
 });
 
 export const Dashboard = () => {
-  const [data, setData] = useState(cardDetails);
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState("");
