@@ -14,6 +14,7 @@ function App() {
         .then((json) => {
           if (json.success && json.data.length > 0) {
             const contentArray = json.data[0].content;
+            console.log("contentarray",contentArray);
             setRecords(contentArray);
             setLastUpdated(new Date().toLocaleTimeString("en-IN"));
           }
