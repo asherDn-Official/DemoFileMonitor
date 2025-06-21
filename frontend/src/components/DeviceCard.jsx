@@ -4,14 +4,17 @@ import { StatusBadge } from './StatusBadge';
 
 
 export const DeviceCard = ({ device }) => {
-  const getHeaderColor = () => {
-    if (device.Connected.toLowerCase() === 'yes') {
-      return 'bg-[#19CD40]';
-    }else if(device.Connected.toLowerCase() === 'fc'){
-      return 'bg-[#DD9804]';
-    }
-    return 'bg-[#D20C2D]';
-  };
+  
+  const getHeaderColor = (device) => {
+  // First check if device and device.Connected exist
+  if (!device?.Connected) return 'bg-[#D20C2D]'; // Default color
+  
+  const status = device.Connected.toLowerCase();
+  
+  if (status === 'yes') return 'bg-[#19CD40]';
+  if (status === 'fc') return 'bg-[#DD9804]';
+  return 'bg-[#D20C2D]';
+};
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -24,7 +27,7 @@ export const DeviceCard = ({ device }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden  min-w-[300px] cursor-pointer ">
-      <div className={`${getHeaderColor()} text-white p-3`}>
+      <div className={`${getHeaderColor(device)} text-white p-3`}>
         <div className="font-semibold text-sm">Device Id : {device.Deviceid}</div>
       </div>
       

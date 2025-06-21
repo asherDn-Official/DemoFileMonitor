@@ -1,8 +1,10 @@
 import { ChevronDown, User } from "lucide-react";
 import { SummaryCard } from "../components/SummaryCard";
 import { DeviceCard } from "../components/DeviceCard";
+import { useCallback, useEffect, useState } from "react";
+import axios from "axios";
 
-const data = [
+const cardDetails = [
   {
     Deviceid: 123455,
     Connected: "no",
@@ -115,22 +117,60 @@ const data = [
   },
 ];
 
+// Create an axios instance with base configuration
+const api = axios.create({
+  baseURL: "http://localhost:5000/api",
+  timeout: 10000, // 10 seconds timeout
+});
+
 export const Dashboard = () => {
+  const [data, setData] = useState(cardDetails);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState("");
 
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    
+      const response = await api.get("/data");
+      const { data } = response;
 
+      if (!data.success) {
+        throw new Error("API request was not successful");
+      }
 
-  // Calculate summary statistics
+      if (data.data?.length > 0) {
+        setData(data.data[0].content);
+        setLastUpdated(new Date().toLocaleTimeString("en-IN"));
+      }
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError(err.message || "Failed to fetch data");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+
+    // Set up polling to refresh data every minute
+    const intervalId = setInterval(fetchData, 60000);
+
+    return () => clearInterval(intervalId);
+  }, [fetchData]);
+
   const totalDevices = data.length;
   const connectedDevices = data.filter(
-    (d) => d.Connected.toLowerCase() === "yes"
+    (d) => d.Connected && d.Connected.toLowerCase() === "yes"
   ).length;
   const failedDevices = data.filter(
-    (d) => d.Connected.toLowerCase() === "no"
+    (d) => d.Connected && d.Connected.toLowerCase() === "fc"
   ).length;
   const notConnectedDevices = data.filter(
-    (d) => d.Connected.toLowerCase() === "no"
+    (d) => d.Connected && d.Connected.toLowerCase() === "no"
   ).length;
 
   return (
