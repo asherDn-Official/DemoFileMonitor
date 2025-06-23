@@ -1,7 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const DataModel = require("../shared/models/DataModel");
 
 // Express Setup
 const app = express();
@@ -12,7 +11,7 @@ app.use(express.json());
 
 // MongoDB Setup
 const MONGODB_URI =
-  "mongodb+srv://asherdntrk:3k4oeR1naWvBLmzQ@cluster0.byggpdg.mongodb.net/FileMonitor?retryWrites=true&w=majority";
+  "mongodb+srv://bhuvan:Semicon25@cluster0.pbfgnc7.mongodb.net/EsdMonitor?retryWrites=true&w=majority&appName=Cluster0";
 const MONGO_OPTIONS = {
   serverSelectionTimeoutMS: 30000,
   socketTimeoutMS: 60000,
@@ -27,6 +26,19 @@ const MONGO_OPTIONS = {
 mongoose.set("debug", true); // optional for debugging
 mongoose.set("strictQuery", false); // to match existing code
 
+// Define Schema & Model locally for this project
+const deviceLogSchema = new mongoose.Schema({
+  DeviceID: Number,
+  Connected: String,
+  Date: String,
+  Time: String,
+  Operator1: String,
+  Operator2: String,
+  Mat1: String,
+  Mat2: String,
+});
+const DeviceLog = mongoose.model("DeviceLog", deviceLogSchema);
+
 // Mongo Connection
 mongoose
   .connect(MONGODB_URI, MONGO_OPTIONS)
@@ -37,18 +49,13 @@ mongoose
     console.error("❌ MongoDB connection failed:", err.message);
   });
 
-// API Route
+// API Route - now uses DeviceLog model
 app.get("/api/data", async (req, res) => {
   try {
-    const rawData = await mongoose.connection.db
-      .collection("excel_files")
-      .find({})
-      .sort({ lastUpdated: -1 })
-      .toArray();
-
-    res.status(200).json({ success: true, data: rawData });
+    const logs = await DeviceLog.find().sort({ Date: -1, Time: -1 }); // newest first
+    res.status(200).json({ success: true, data: logs });
   } catch (err) {
-    console.error("❌ Direct query error:", err.message);
+    console.error("❌ Query failed:", err.message);
     res.status(500).json({ success: false, message: "DB query failed" });
   }
 });

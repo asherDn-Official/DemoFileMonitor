@@ -1,180 +1,109 @@
-const fs = require("fs");
-const path = require("path");
 const mongoose = require("mongoose");
-const xlsx = require("xlsx");
-const cron = require("node-cron");
-const DataModel = require("../shared/models/DataModel");
+const SerialPort = require("serialport");
+const { ReadlineParser } = require("@serialport/parser-readline");
 
-// Configuration
-const config = {
-  DATA_DIR: path.join(__dirname, "./data"),
-  FILE_NAME: "data-file.xlsx",
-  CRON_SCHEDULE: "*/2 * * * * *", // Every 2 seconds
-  MONGODB_URI:
-    "mongodb+srv://asherdntrk:3k4oeR1naWvBLmzQ@cluster0.byggpdg.mongodb.net/FileMonitor?retryWrites=true&w=majority",
-  MONGO_OPTIONS: {
-    serverSelectionTimeoutMS: 30000,
-    socketTimeoutMS: 60000,
-    maxPoolSize: 5,
-    retryWrites: true,
-    retryReads: true,
-    connectTimeoutMS: 30000,
-    keepAlive: true,
-    keepAliveInitialDelay: 300000,
-  },
-};
+// MongoDB Setup
+const MONGO_URI =
+  "mongodb+srv://bhuvan:Semicon25@cluster0.pbfgnc7.mongodb.net/EsdMonitor?retryWrites=true&w=majority&appName=Cluster0";
 
-// Enable mongoose debugging
-mongoose.set("debug", true);
 mongoose.set("strictQuery", false);
+mongoose.connect(MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
-// MongoDB connection handler
-async function connectToMongoDB() {
-  try {
-    await mongoose.connect(config.MONGODB_URI, config.MONGO_OPTIONS);
-    console.log("✅ MongoDB connection established");
-    return true;
-  } catch (err) {
-    console.error("❌ MongoDB connection failed:", err.message);
-    return false;
-  }
+mongoose.connection.on("connected", () => {
+  console.log("✅ MongoDB connected");
+});
+mongoose.connection.on("error", (err) => {
+  console.error("❌ MongoDB error:", err);
+});
+
+// Define Schema
+const logSchema = new mongoose.Schema({
+  DeviceID: Number,
+  Connected: String,
+  Date: String, // Format: YYYYMMDD
+  Time: String, // Format: HH:mm:ss
+  Operator1: String,
+  Operator2: String,
+  Mat1: String,
+  Mat2: String,
+});
+
+const DeviceLog = mongoose.model("DeviceLog", logSchema);
+
+// Serial Port Setup
+const port = new SerialPort.SerialPort({
+  path: "COM3",
+  baudRate: 115200,
+});
+
+const parser = port.pipe(new ReadlineParser({ delimiter: ":" }));
+
+// Transform functions
+function getCurrentDate() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// Process Excel file with robust error handling
-async function processExcelFile() {
-  const filePath = path.join(config.DATA_DIR, config.FILE_NAME);
-  const startTime = Date.now();
-
-  console.log(
-    `\n⏳ [${new Date().toISOString()}] Processing file: ${config.FILE_NAME}`
-  );
-
-  try {
-    // Verify connection
-    if (mongoose.connection.readyState !== 1) {
-      console.log("ℹ️ Attempting MongoDB reconnection...");
-      if (!(await connectToMongoDB())) {
-        console.log("⚠️ Skipping this run due to connection issues");
-        return;
-      }
-    }
-
-    // File existence check
-    if (!fs.existsSync(filePath)) {
-      console.log("ℹ️ File not found, skipping");
-      return;
-    }
-
-    // Read Excel data
-    const workbook = xlsx.readFile(filePath);
-    const sheetName = workbook.SheetNames[0];
-    const rawData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-    function convertExcelDate(serial) {
-      // Excel date serial to JS Date
-      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
-      return new Date(excelEpoch.getTime() + serial * 86400 * 1000);
-    }
-
-    function convertExcelTime(fraction) {
-      const totalSeconds = Math.round(fraction * 24 * 60 * 60);
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-
-      return [hours, minutes, seconds]
-        .map((v) => String(v).padStart(2, "0"))
-        .join(":"); // "HH:mm:ss"
-    }
-
-    const excelData = rawData.map((row) => {
-      const formatted = { ...row };
-
-      if (typeof row.Date === "number") {
-        formatted.Date = convertExcelDate(row.Date); // JS Date object
-      }
-
-      if (typeof row.Time === "number") {
-        formatted.Time = convertExcelTime(row.Time); // "HH:mm:ss"
-      }
-
-      return formatted;
-    });
-
-    console.log(`📊 Extracted ${excelData.length} records`);
-
-    // Prepare document
-    const doc = {
-      fileName: config.FILE_NAME,
-      fileType: "xlsx",
-      content: excelData,
-      lastUpdated: new Date(),
-      recordsCount: excelData.length,
-    };
-
-    // Direct collection access with timeout
-    const collection = mongoose.connection.db.collection("excel_files");
-    const options = {
-      upsert: true,
-      returnDocument: "after",
-      maxTimeMS: 30000,
-    };
-
-    const result = await collection.findOneAndUpdate(
-      { fileName: doc.fileName },
-      { $set: doc },
-      options
-    );
-
-    const processingTime = ((Date.now() - startTime) / 1000).toFixed(2);
-    console.log(`✅ Update successful (${processingTime}s)`);
-    console.log(
-      `   - Modified: ${result.lastErrorObject.updatedExisting ? "Yes" : "No"}`
-    );
-    console.log(`   - Records: ${doc.recordsCount}`);
-  } catch (err) {
-    console.error(`❌ Processing failed:`, err.message);
-
-    // Reset connection if error is MongoDB-related
-    if (err.name.includes("Mongo")) {
-      console.log("ℹ️ Resetting MongoDB connection");
-      await mongoose.disconnect();
-    }
-  }
+function getCurrentTime() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(
+    d.getMinutes()
+  ).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
 }
 
-// Initialize and start processing
-(async function main() {
-  // Connection events for debugging
-  mongoose.connection.on("connected", () => {
-    console.log("Mongoose event: Connected");
+function mapValue(val) {
+  if (val === "FAIL") return "No";
+  if (val === "PASS") return "Yes";
+  return "NC"; // Not Connected or unknown
+}
+
+// Parse serial data
+parser.on("data", async (line) => {
+  console.log(`📥 Received: ${line.trim()}`);
+
+  const parts = line.trim().split(",");
+  const deviceID = parseInt(parts[0], 10);
+  const dataValues = parts.slice(1).map(mapValue);
+
+  // Build logEntry dynamically based on data length
+  const logEntry = {
+    DeviceID: deviceID,
+    Connected: dataValues.includes("Yes") ? "Yes" : "No",
+    Date: getCurrentDate(),
+    Time: getCurrentTime(),
+  };
+
+  const fieldNames = ["Operator1", "Operator2", "Mat1", "Mat2"];
+  fieldNames.forEach((field, index) => {
+    if (index < dataValues.length) {
+      logEntry[field] = dataValues[index];
+    }
   });
 
-  mongoose.connection.on("disconnected", () => {
-    console.log("Mongoose event: Disconnected");
-  });
-
-  mongoose.connection.on("error", (err) => {
-    console.error("Mongoose event error:", err);
-  });
-
-  // Initial connection
-  const connected = await connectToMongoDB();
-  if (connected) {
-    console.log(`⏰ Starting cron job (${config.CRON_SCHEDULE})`);
-    cron.schedule(config.CRON_SCHEDULE, processExcelFile);
-
-    // Initial run
-    await processExcelFile();
-  } else {
-    console.log("Failed to establish initial connection");
-    process.exit(1);
+  try {
+    await DeviceLog.findOneAndUpdate(
+      { DeviceID: logEntry.DeviceID },
+      { $set: logEntry },
+      { upsert: true, new: true }
+    );
+    console.log("✅ Data inserted/updated:", logEntry);
+  } catch (err) {
+    console.error("❌ Failed to insert/update data:", err.message);
   }
-})();
+});
 
-// Graceful shutdown
+// Graceful exit
 process.on("SIGINT", async () => {
   console.log("\n🛑 Shutting down...");
   await mongoose.disconnect();
-  process.exit(0);
+  port.close(() => {
+    console.log("🔌 Serial port closed");
+    process.exit(0);
+  });
 });

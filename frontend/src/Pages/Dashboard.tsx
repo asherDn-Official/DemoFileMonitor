@@ -1,126 +1,13 @@
-import { ChevronDown, User } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { SummaryCard } from "../components/SummaryCard";
 import { DeviceCard } from "../components/DeviceCard";
 import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 
-const cardDetails = [
-  {
-    Deviceid: 123455,
-    Connected: "no",
-    Date: "2025-06-01T00:00:00.000Z",
-    Time: "10:15 am",
-    "operator 1": "Yes",
-    Operator2: "No",
-    Mat1: "No",
-    Mat2: "NC",
-  },
-  {
-    Deviceid: 987654,
-    Connected: "no",
-    Date: "2025-06-01T00:00:00.000Z",
-    Time: "10:15 am",
-    "operator 1": "Yes",
-    Operator2: "No",
-    Mat1: "No",
-    Mat2: "NC",
-  },
-  {
-    Deviceid: 298789,
-    Connected: "yes",
-    Date: "2025-07-01T00:00:00.000Z",
-    Time: "10:15 am",
-    "operator 1": "Yes",
-    Operator2: "No",
-    Mat1: "No",
-    Mat2: "NC",
-  },
-  {
-    Deviceid: 298790,
-    Connected: "yes",
-    Date: "2025-07-01T00:00:00.000Z",
-    Time: "10:15 am",
-    "operator 1": "Yes",
-    Operator2: "No",
-    Mat1: "No",
-    Mat2: "NC",
-  },
-  {
-    Deviceid: 298791,
-    Connected: "yes",
-    Date: "2025-07-01T00:00:00.000Z",
-    Time: "10:15 am",
-    "operator 1": "Yes",
-    Operator2: "No",
-    Mat1: "No",
-    Mat2: "NC",
-  },
-  {
-    Deviceid: 298792,
-    Connected: "yes",
-    Date: "2025-07-01T00:00:00.000Z",
-    Time: "10:15 am",
-    "operator 1": "Yes",
-    Operator2: "No",
-    Mat1: "No",
-    Mat2: "NC",
-  },
-  {
-    Deviceid: 298793,
-    Connected: "no",
-    Date: "2025-07-01T00:00:00.000Z",
-    Time: "10:15 am",
-    "operator 1": "Yes",
-    Operator2: "No",
-    Mat1: "No",
-    Mat2: "NC",
-  },
-  {
-    Deviceid: 298794,
-    Connected: "no",
-    Date: "2025-07-01T00:00:00.000Z",
-    Time: "10:15 am",
-    "operator 1": "Yes",
-    Operator2: "No",
-    Mat1: "No",
-    Mat2: "NC",
-  },
-  {
-    Deviceid: 298795,
-    Connected: "yes",
-    Date: "2025-07-01T00:00:00.000Z",
-    Time: "10:15 am",
-    "operator 1": "Yes",
-    Operator2: "No",
-    Mat1: "No",
-    Mat2: "NC",
-  },
-  {
-    Deviceid: 298796,
-    Connected: "yes",
-    Date: "2025-07-01T00:00:00.000Z",
-    Time: "10:15 am",
-    "operator 1": "Yes",
-    Operator2: "No",
-    Mat1: "No",
-    Mat2: "NC",
-  },
-  {
-    Deviceid: 298796,
-    Connected: "fc",
-    Date: "2025-07-01T00:00:00.000Z",
-    Time: "10:45 am",
-    "operator 1": "Yes",
-    Operator2: "No",
-    Mat1: "No",
-    Mat2: "NC",
-  },
-];
-
-// Create an axios instance with base configuration
+// Axios instance
 const api = axios.create({
   baseURL: "http://localhost:5000/api",
-  timeout: 10000, // 10 seconds timeout
+  timeout: 10000,
 });
 
 export const Dashboard = () => {
@@ -141,9 +28,11 @@ export const Dashboard = () => {
         throw new Error("API request was not successful");
       }
 
-      if (data.data?.length > 0) {
-        setData(data.data[0].content);
+      if (Array.isArray(data.data)) {
+        setData(data.data);
         setLastUpdated(new Date().toLocaleTimeString("en-IN"));
+      } else {
+        setData([]);
       }
     } catch (err) {
       console.error("Error fetching data:", err);
@@ -155,22 +44,19 @@ export const Dashboard = () => {
 
   useEffect(() => {
     fetchData();
-
-    // Set up polling to refresh data every minute
-    const intervalId = setInterval(fetchData, 60000);
-
+    const intervalId = setInterval(fetchData, 2000); // Poll every 60 sec
     return () => clearInterval(intervalId);
   }, [fetchData]);
 
   const totalDevices = data.length;
   const connectedDevices = data.filter(
-    (d) => d.Connected && d.Connected.toLowerCase() === "yes"
+    (d) => d.Connected?.toLowerCase() === "yes"
   ).length;
   const failedDevices = data.filter(
-    (d) => d.Connected && d.Connected.toLowerCase() === "fc"
+    (d) => d.Connected?.toLowerCase() === "fc"
   ).length;
   const notConnectedDevices = data.filter(
-    (d) => d.Connected && d.Connected.toLowerCase() === "no"
+    (d) => d.Connected?.toLowerCase() === "no"
   ).length;
 
   return (
@@ -181,9 +67,6 @@ export const Dashboard = () => {
           <h1 className="text-lg md:text-xl font-semibold">
             ESD Continuous monitoring Dashboard
           </h1>
-          {/* <div className="w-8 h-8 md:w-10 md:h-10 bg-white rounded-full flex items-center justify-center">
-            <User className="w-4 h-4 md:w-6 md:h-6 text-blue-700" />
-          </div> */}
         </div>
       </div>
 
@@ -222,27 +105,35 @@ export const Dashboard = () => {
             <h2 className="text-base sm:text-lg font-semibold text-gray-800 ">
               Production Line Overview:
             </h2>
-            {/* Optional filters - commented out but made responsive */}
-            {/* <div className="flex flex-col xs:flex-row gap-2 sm:gap-4 w-full xs:w-auto">
-              <div className="relative flex-1 xs:flex-none">
-                <select className="appearance-none bg-white border border-gray-300 rounded px-3 py-1 md:px-4 md:py-2 pr-6 md:pr-8 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base">
-                  <option>Date</option>
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 md:w-4 md:h-4 text-gray-400 pointer-events-none" />
-              </div>
-              <div className="relative flex-1 xs:flex-none">
-                <select className="appearance-none bg-white border border-gray-300 rounded px-3 py-1 md:px-4 md:py-2 pr-6 md:pr-8 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base">
-                  <option>Shift</option>
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 md:w-4 md:h-4 text-gray-400 pointer-events-none" />
-              </div>
-            </div> */}
           </div>
 
-          {/* Device Cards Grid */}
+          {/* Feedback */}
+          {loading && (
+            <p className="text-center text-sm text-gray-500">Loading...</p>
+          )}
+          {error && <p className="text-center text-sm text-red-500">{error}</p>}
+          {!loading && data.length === 0 && (
+            <p className="text-center text-sm text-gray-500">
+              No device data available.
+            </p>
+          )}
+
+          {/* Device Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4">
             {data.map((device, index) => (
-              <DeviceCard key={index} device={device} />
+              <DeviceCard
+                key={index}
+                device={{
+                  Deviceid: device.DeviceID,
+                  Connected: device.Connected,
+                  Date: device.Date,
+                  Time: device.Time,
+                  "operator 1": device.Operator1,
+                  Operator2: device.Operator2,
+                  Mat1: device.Mat1,
+                  Mat2: device.Mat2,
+                }}
+              />
             ))}
           </div>
         </div>
