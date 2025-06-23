@@ -44,7 +44,7 @@ export const Dashboard = () => {
 
   useEffect(() => {
     fetchData();
-    const intervalId = setInterval(fetchData, 2000); // Poll every 60 sec
+    const intervalId = setInterval(fetchData, 60000); // Poll every 60 sec
     return () => clearInterval(intervalId);
   }, [fetchData]);
 
@@ -111,7 +111,9 @@ export const Dashboard = () => {
           {loading && (
             <p className="text-center text-sm text-gray-500">Loading...</p>
           )}
-          {error && <p className="text-center text-sm text-red-500">{error}</p>}
+          {error && (
+            <p className="text-center text-sm text-red-500">{error}</p>
+          )}
           {!loading && data.length === 0 && (
             <p className="text-center text-sm text-gray-500">
               No device data available.
@@ -141,5 +143,3 @@ export const Dashboard = () => {
     </div>
   );
 };
-
-export default Dashboard;
