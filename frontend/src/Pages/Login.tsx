@@ -16,17 +16,15 @@ const Login = () => {
     setError("");
 
     try {
-      // Simulate login API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Simulate API call delay
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // For demo purposes, accept any non-empty username/password
-      if (username.trim() && password.trim()) {
-        // Store auth state (in a real app, you'd store a token)
+      // Check credentials
+      if (username === "admin velloresemicon" && password === "admin@1234") {
         localStorage.setItem("isAuthenticated", "true");
-        // Redirect to dashboard
         navigate("/dashboard");
       } else {
-        setError("Please enter both username and password");
+        setError("Invalid username or password");
       }
     } catch (err) {
       setError("Login failed. Please try again.");
@@ -40,15 +38,14 @@ const Login = () => {
       <div className="w-full max-w-md">
         {/* Logo Section */}
         <div className="text-center mb-8">
-          {/* Logo Image - Replace with your actual logo */}
           <div className="flex justify-center mb-4">
             <img
               src="/Logo-Png-1-250x39.png"
               alt="Company Logo"
-              //   className="h-16 w-auto"
               onError={(e) => {
                 e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/150x150?text=LOGO";
+                e.target.src =
+                  "https://via.placeholder.com/250x39?text=Vellore+Semicon";
               }}
             />
           </div>
@@ -124,7 +121,7 @@ const Login = () => {
               </div>
             </div>
 
-            {/* Remember Me & Forgot Password */}
+            {/* Remember Me */}
             <div className="flex items-center justify-between text-sm">
               <label className="flex items-center text-gray-600">
                 <input
@@ -133,12 +130,6 @@ const Login = () => {
                 />
                 Remember me
               </label>
-              {/* <a
-                href="#"
-                className="text-blue-600 hover:text-blue-800 transition-colors duration-200"
-              >
-                Forgot password?
-              </a> */}
             </div>
 
             {/* Login Button */}
@@ -157,26 +148,6 @@ const Login = () => {
               )}
             </button>
           </form>
-
-          {/* Divider */}
-          {/* <div className="mt-6 flex items-center">
-            <div className="flex-1 border-t border-gray-300"></div>
-            <span className="px-4 text-sm text-gray-500">or</span>
-            <div className="flex-1 border-t border-gray-300"></div>
-          </div> */}
-
-          {/* Sign Up Link */}
-          {/* <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              Don't have an account?{" "}
-              <a
-                href="#"
-                className="text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200"
-              >
-                Sign up
-              </a>
-            </p>
-          </div> */}
         </div>
 
         {/* Footer */}
